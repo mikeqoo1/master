@@ -48,23 +48,23 @@ Deep neural networks (DNNs) are currently the foundation for many modern artific
 然而，DNN的卓越準確性是以高計算複雜性為代價的。雖然通用計算引擎，特別是圖形處理單元（GPU），一直是許多DNN處理的主力，但越來越多的人對提供更專門的DNN計算加速感興趣。這篇文章旨在概述DNN、理解其行為的各種工具以及探索高效加速其計算的技術。
 
 This paper is organized as follows.
-•  Section II provides background on the context of why
+• Section II provides background on the context of why
 DNNs are important, their history and applications.
-•  Section III gives an overview of the basic components
+• Section III gives an overview of the basic components
 of DNNs and popular DNN models currently in use.
-•  Section IV describes the various resources used for
+• Section IV describes the various resources used for
 DNN research and development.
-•  Section V describes the various hardware platform
+• Section V describes the various hardware platform
 used to process DNNs and the various optimizations 
 used to improve throughput and energy efficiency 
 without impacting application accuracy (i.e., produce 
 bitwise identical results).
-•  Section VI discusses how mixed-signal circuits and new
+• Section VI discusses how mixed-signal circuits and new
 memory technologies can be used for near-data processing to address the expensive data movement that dominates throughput and energy consumption of DNNs.
-•  Section VII describes various joint algorithm and hardware optimizations that can be performed on DNNs t
+• Section VII describes various joint algorithm and hardware optimizations that can be performed on DNNs t
 improve both throughput and energy efficiency while 
 trying to minimize impact on accuracy.
-•  Section VIII describes the key metrics that should be
+• Section VIII describes the key metrics that should be
 considered when comparing various DNN designs.
 
 這篇文章的組織如下：
@@ -324,7 +324,7 @@ DNN 結構的多樣性
   不同 DNN 模型在以下方面有所不同：
 - 層數（深度）
 - 層類型（卷積層、全連接層等）
-- 層的形狀（如濾波器大小、通道數與濾波器數量）
+- 層的形狀（如濾波器大小、通道數與濾波器數量） 補充 濾波器的作用-濾波器的作用是提取輸入數據中的局部特徵，例如邊緣、顏色模式、紋理等。在影像處理中，它們用於識別圖片中不同層級的特徵。
 - 層與層之間的連接方式
 
 模型發展趨勢
@@ -349,4 +349,216 @@ DNN 結構的多樣性
 
 1. 提供工作負載的特性描述。
 2. 促進對模型複雜性與準確性之間權衡的探索。
- 
+
+A. 框架（Frameworks）
+DNN 開發框架提供便捷的工具和功能，幫助研究者和應用開發者快速設計與共享訓練過的模型。
+這些框架還對高性能和高效率的 DNN 計算引擎的工程實現起到關鍵作用。
+
+1.主要框架簡介：
+
+- Caffe
+  - 發布年份：2014 年，由 UC Berkeley 開發。
+  - 語言支持：C、C++、Python、MATLAB。
+
+- TensorFlow
+  - 發布年份：2015 年，由 Google 開發。
+  - 語言支持：C++、Python。
+  - 特點：支持多 CPU 和 GPU，使用數據流圖管理多維張量，靈活性高。
+
+- Torch / PyTorch
+  - Torch：由 Facebook 與 NYU 開發，支持 C、C++、Lua。
+  - PyTorch：Torch 的後繼者，主要使用 Python 開發。
+
+- 其他框架：如 Theano、MXNet、CNTK 等，也提供強大的功能。
+
+- 高層封裝庫：如 Keras（支持 TensorFlow、CNTK 和 Theano），用於簡化開發並加速實現。
+
+2.框架的價值：
+
+- 提供標準化的開發環境，便於研究者與開發者高效合作。
+- 通過內建操作（如卷積層處理）支持軟硬體加速（如 Nvidia cuDNN 和專用硬體加速器）。
+- 為硬體研究提供基準工作負載，有助於硬體/軟體權衡的探索與分析。
+
+B. 模型（Models）
+
+1.預訓練模型：
+
+- 各種框架提供的網站可下載多種預訓練 DNN 模型。
+- 同一模型（例如 AlexNet）因訓練方式不同，其準確率可能相差 1%～2%。
+
+C. 圖像分類數據集（Popular Data Sets for Classification）
+
+1.重要性：
+
+- 使用公開數據集評估模型準確率有助於進行公平比較。
+- 數據集的難度會影響 DNN 模型的大小與運算需求，並進一步影響效能與能耗。
+
+2.常見數據集簡介：
+
+- MNIST
+  - 任務：手寫數字分類（10 個類別）。
+  - 規模：60,000 張訓練圖像、10,000 張測試圖像。
+  - 特點：經驗證準確率已從最初的 99.05% 提升到 99.79%，現在被認為是相對簡單的數據集。
+
+- CIFAR-10
+- 任務：多類別物體分類（10 個類別）。
+- 規模：50,000 張訓練圖像、10,000 張測試圖像。
+- 特點：最初準確率為 64.84%，現已提升至 96.53%。
+
+- ImageNet
+  - 任務：大規模圖像分類（1000 個類別）。
+  - 規模：130 萬張訓練圖像、10 萬張測試圖像、5 萬張驗證圖像。
+  - 測量方式：
+  - Top-5 錯誤率：前五個預測中包含正確類別即為正確。
+  - Top-1 錯誤率：預測的第一類別必須正確。
+  - 特點：2012 年的 AlexNet 模型 Top-5 準確率為 83.6%，到 2017 年提升至 97.7%。
+
+3.結論：
+
+- MNIST 是簡單數據集，而 ImageNet 是挑戰性更大的數據集。比較模型準確率時需考慮數據集的特性與難度。
+
+D. 其他任務數據集（Data Sets for Other Tasks）
+
+1.進階任務數據集：
+
+- 單物體定位（Single-Object Localization）
+  - 必須定位並分類圖像中的目標物體（1000 個類別）。
+
+- 物體檢測（Object Detection）
+  - 必須定位並分類圖像中所有物體（200 個類別）。
+
+- 其他常見數據集：
+
+- PASCAL VOC
+  - 任務：物體檢測。
+  - 規模：11,000 張圖像，20 個類別（27,000 個物體實例）。
+
+- MS COCO
+  - 任務：物體檢測、分割與上下文識別。
+  - 規模：328,000 張圖像，250 萬個標註實例，91 個物體類別。
+
+- Google 開放影像數據集
+  - 規模：900 萬張圖像，涵蓋 6000 個類別。
+
+- YouTube 數據集
+  - 規模：800 萬部影片（50 萬小時），涵蓋 4800 類別。
+
+- Google 音頻數據集
+  - 規模：632 種音頻事件類別，200 萬段 10 秒音頻片段。
+
+3.未來展望：
+
+- 更大規模與跨領域的數據集將成為未來 DNN 開發的重要資源，有助於探索更高效的模型與引擎設計。
+
+## 第五節 DNN 硬體處理技術
+
+由於深度神經網路（DNN）的普及，許多現代硬體平台新增了專門針對 DNN 處理的功能。例如：
+
+- Intel Knights Mill CPU 提供專用的深度學習向量指令 [73]。
+- Nvidia PASCAL GP100 GPU 支援 16 位浮點數（FP16）運算，能在單一精度核心上執行兩次 FP16 運算，顯著提升深度學習的計算速度。
+- 專為 DNN 處理設計的系統包括 Nvidia DGX-1 和 Facebook 的 Big Basin 定制 DNN 伺服器 [74]。
+
+此外，DNN 的推論能力已經被實現於多種嵌入式系統晶片（SoCs），如 Nvidia Tegra 和 Samsung Exynos，
+以及現場可程式邏輯閘陣列（FPGAs）。
+因此，瞭解這些平台的處理方式，以及如何設計針對 DNN 的應用特定加速器（ASIC），對於進一步提升吞吐量和能源效率非常重要。
+
+核心運算單元與架構類型
+
+DNN 的卷積層（CONV）和全連接層（FC）主要依賴 乘加運算（MAC），該運算易於平行化。
+為實現高效能，常見的設計採用了高度平行的計算架構，主要分為以下兩類：
+
+1.時間架構（Temporal Architectures）
+
+- 常見於 CPU 和 GPU 中。
+- 通過向量處理（SIMD）或平行執行緒處理（SIMT）等技術提升平行度。
+- 採用集中控制方式管理大量算術邏輯單元（ALUs），這些 ALUs 只能從記憶體層級獲取資料，無法彼此直接通信。
+
+2.空間架構（Spatial Architectures）
+
+- 常見於 ASIC 和 FPGA 設計中。
+- 使用資料流處理（Dataflow Processing），使 ALUs 形成處理鏈，可以直接傳遞資料。
+- 每個 ALU 可以擁有獨立的控制邏輯和本地記憶體（如暫存器或快取）。配備本地記憶體的 ALU 稱為 處理引擎（Processing Engine, PE）。
+
+平台優化策略
+不同硬體平台的設計策略各有側重，在不影響計算精度（產生位元層級相同的結果）的前提下，專注於以下優化方向：
+
+1.時間架構（CPUs 和 GPUs）
+
+- 通過計算內核的轉換減少乘法次數，從而提高運算吞吐量。
+
+2.空間架構（加速器，如 ASIC 和 FPGA）
+
+- 利用資料流設計提高數據重用率，減少高成本記憶體的訪問次數，從而降低能源消耗。
+
+DNN 的硬體處理技術不斷演進，針對不同架構的優化設計，確保其效能最大化：
+
+- 在 CPU 和 GPU 等時間架構中，側重於平行化運算和內核優化。
+- 在 ASIC 和 FPGA 等空間架構中，專注於資料流處理與記憶體利用效率。
+
+A. 在 CPU 和 GPU 平台上加速內核計算
+
+CPU 和 GPU 使用如 SIMD（單指令多資料流） 或 SIMT（單指令多執行緒）
+等平行化技術，來實現同時執行多個乘加運算（MAC）。
+這些平台上的所有算術邏輯單元（ALUs）共用相同的控制邏輯和記憶體（暫存器檔）。
+在這些硬體上，全連接層（FC 層）和卷積層（CONV 層）通常會被映射為矩陣乘法（即內核計算）。
+
+圖展示了如何將矩陣乘法用於 FC 層：
+
+![alt text](image-3.png)
+
+- 濾波器矩陣的高度對應於 3D 濾波器的數量，寬度則是每個 3D 濾波器的權重數量（輸入通道數C × 寬度𝑊 × 高度𝐻，因為在 FC 層中𝑅=𝑊 且𝑆=𝐻）
+
+- 輸入特徵圖矩陣的高度是每個 3D 輸入特徵圖中的激活數量（𝐶×𝑊×𝐻），寬度則是 3D 輸入特徵圖的數量（圖 a 中為 1，圖 b 中為𝑁）。
+
+- 輸出特徵圖矩陣的高度是輸出特徵圖的通道數（𝑀），寬度則是 3D 輸出特徵圖的數量（𝑁）。在 FC 層中，每個輸出特徵圖的尺寸為1×1× 輸出通道數𝑀。
+
+在 DNN 中，卷積層（CONV 層）也可以被映射為矩陣乘法，這通常使用放寬形式的 Toeplitz 矩陣（常對角矩陣）來實現，
+
+如圖所示。
+
+![alt text](image-4.png)
+
+然而，將 CONV 層映射為矩陣乘法會產生一個問題：
+輸入特徵圖矩陣中存在冗餘數據（如 圖a 所示的高亮部分）。這種冗餘可能導致存儲效率低下或記憶體訪問模式變得複雜。
+
+就是這樣的運算很多餘的概念
+
+有許多專為 CPU（例如 OpenBLAS、Intel MKL 等）和 GPU（例如 cuBLAS、cuDNN 等）設計的軟體庫，可以優化矩陣乘法。
+這些平台上的矩陣乘法會依據存儲層級（通常為數百 KB 到數 MB）進行分塊處理。
+
+在這些平台上，透過對數據應用計算轉換，可以進一步加速矩陣乘法，減少乘法次數，同時保證位元結果相同。
+然而，這通常會以增加加法次數及數據訪問模式更不規則為代價。
+
+快速傅里葉變換（FFT） 是一種知名的方法，如圖所示
+
+![alt text](image-5.png)
+
+它將乘法次數從![alt text](image-6.png) 輸出大小為𝑁𝑜×𝑁𝑜 ，濾波器大小為𝑁𝑓×𝑁𝑓​
+
+執行卷積時，首先對濾波器和輸入特徵圖進行 FFT，然後在頻域中進行乘法，
+最後對結果應用逆 FFT（IFFT），以恢復空間域中的輸出特徵圖。
+然而，使用 FFT 存在以下缺點：
+
+1. 濾波器越小，FFT 的效益越低；
+2. FFT 的大小由輸出特徵圖的大小決定，通常遠大於濾波器；
+3. 頻域中的係數為複數，增加了計算和存儲複雜性。
+
+因此，儘管 FFT 減少了計算量，但需要更大的存儲容量和帶寬。
+此外，一種常見的降維方法是使權重稀疏化，但 FFT 的使用使得稀疏性難以被利用。
+針對 FFT，有幾種優化策略可以提高其在 DNN 中的效率：
+
+1.可以預先計算並存儲濾波器的 FFT；
+2.輸入特徵圖的 FFT 可計算一次並用於生成輸出特徵圖的多個通道；
+3.由於圖像僅包含實值，其傅里葉變換具有對稱性，可利用這一點減少存儲和計算成本。
+
+與 FFT 類似，Winograd 演算法對特徵圖和濾波器應用轉換，減少卷積所需的乘法次數。
+Winograd 以塊為基礎運行，乘法減少的幅度取決於濾波器和塊的大小。
+塊越大，乘法減少越多，但轉換複雜性也越高。特別有吸引力的是 3×3 的濾波器，當計算
+2×2 的輸出塊時，乘法次數可減少2.25×。需要注意的是，Winograd 需要針對濾波器和塊大小進行特殊處理。
+
+Strassen 演算法也被用於減少 DNN 中的乘法次數。它以遞歸方式重新排列矩陣乘法的計算，將乘法次數從
+𝑂(𝑁3)降至𝑂(𝑁2.807)。然而，Strassen 的優勢以增加存儲需求和有時降低數值穩定性為代價。
+
+實際應用中，不同層的形狀和大小可能使用不同的演算法
+（例如，FFT 適用於濾波器大於5×5，Winograd 適用於3×3或更小的濾波器）。
+現有平台庫（如 MKL 和 cuDNN）會動態選擇適合特定形狀和大小的演算法。
